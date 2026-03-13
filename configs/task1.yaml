@@ -1,0 +1,54 @@
+# Task 1: Basic lane following (straight road navigation)
+# Orange-yellow curve in training plots
+#
+# Analysis of training curves:
+# - Task 1 converges faster due to simpler road structure
+# - Lower variance in reward due to deterministic straight road
+# - Uses higher learning rate since task is more stable
+
+defaults:
+  - base_config
+
+task:
+  id: "task1"
+  name: "Lane Following - Straight Road"
+  description: >
+    Basic ego-vehicle lane following on a straight road.
+    The agent learns to maintain lane position and target speed.
+  difficulty: "easy"
+  scenarios:
+    - town: "Town01"
+      route_type: "straight"
+    - town: "Town03"
+      route_type: "straight"
+
+optimizer:
+  lr: 3.0e-4            # Higher LR feasible due to simpler task
+
+training:
+  max_epochs: 200
+  batch_size: 256
+
+environment:
+  target_speed: 30.0    # km/h
+  max_episode_steps: 500
+  reward_weights:
+    speed: 1.0          # Weight for speed tracking reward
+    lane_center: 2.0    # Weight for lane centering reward
+    collision: -50.0    # Penalty for collision
+    off_road: -20.0     # Penalty for going off road
+  obs_sensors:
+    - type: "camera"
+      width: 224
+      height: 224
+      fov: 90
+    - type: "speed"
+    - type: "waypoint"
+      num_waypoints: 10
+
+# Task 1 specific augmentation (mild, task is already stable)
+data:
+  augmentation_params:
+    brightness: 0.1
+    contrast: 0.1
+    noise_std: 0.01

@@ -1,0 +1,81 @@
+# Task 3: Urban navigation with intersections and dynamic obstacles
+# Blue curve in training plots
+#
+# Analysis of training curves:
+# - Task 3 converges slower due to higher scene complexity
+# - Higher reward variance due to stochastic pedestrians/vehicles
+# - Uses lower learning rate and stronger regularization for stability
+# - Requires more epochs to reach comparable performance to task1
+# - Gradient clipping is especially important here
+#
+# Key training observations from curves:
+# - Early training (0-50 epochs): High variance, exploration phase
+# - Mid training (50-120 epochs): Gradual improvement with oscillation
+# - Late training (120+ epochs): Stable convergence with CosineAnnealing
+
+defaults:
+  - base_config
+
+task:
+  id: "task3"
+  name: "Urban Navigation with Dynamic Obstacles"
+  description: >
+    Complex urban driving with traffic lights, intersections,
+    pedestrians, and other vehicles. The agent must navigate
+    waypoints while handling dynamic obstacles.
+  difficulty: "hard"
+  scenarios:
+    - town: "Town01"
+      route_type: "urban_with_intersections"
+    - town: "Town03"
+      route_type: "urban_with_intersections"
+    - town: "Town05"
+      route_type: "urban_complex"
+
+optimizer:
+  lr: 1.0e-4            # Lower LR for stability due to complex reward landscape
+
+training:
+  max_epochs: 300       # More epochs needed for harder task
+  batch_size: 128       # Smaller batch for better gradient estimation
+  grad_clip: 0.5        # Stricter clipping for complex task
+  early_stopping:
+    patience: 50        # More patience for complex task
+
+environment:
+  target_speed: 30.0    # km/h
+  max_episode_steps: 1000
+  reward_weights:
+    speed: 1.0
+    lane_center: 1.5
+    collision: -100.0   # Heavier collision penalty (urban safety critical)
+    off_road: -30.0
+    red_light: -50.0    # Traffic light violation penalty
+    waypoint_progress: 3.0  # Encourage forward progress
+  obs_sensors:
+    - type: "camera"
+      width: 224
+      height: 224
+      fov: 90
+    - type: "speed"
+    - type: "waypoint"
+      num_waypoints: 20   # More lookahead for complex navigation
+    - type: "lidar"       # Additional sensor for obstacle detection
+      channels: 32
+      range: 50.0
+    - type: "traffic_light_state"
+
+# Stronger augmentation for more diverse urban scenarios
+data:
+  augmentation_params:
+    brightness: 0.3
+    contrast: 0.3
+    noise_std: 0.05
+    horizontal_flip: false  # Driving is not horizontally symmetric
+
+scheduler:
+  name: "CosineAnnealingWarmRestarts"  # Restarts help escape local minima
+  warmup_epochs: 20         # Longer warmup for complex task
+  T_0: 50                   # Restart every 50 epochs
+  T_mult: 2                 # Progressively longer cycles
+  min_lr: 1.0e-6
