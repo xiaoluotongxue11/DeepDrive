@@ -1,0 +1,49 @@
+# Base training configuration for DeepDrive
+# Shared settings across all tasks
+
+model:
+  name: "PolicyNetwork"
+  obs_dim: 256          # Observation feature dimension
+  hidden_dim: 512       # Hidden layer dimension
+  action_dim: 2         # [steering, throttle/brake]
+  num_layers: 3         # Number of hidden layers
+  dropout: 0.1          # Dropout rate for regularization
+
+training:
+  seed: 42
+  device: "cuda"        # "cuda" or "cpu"
+  max_epochs: 200
+  eval_interval: 10     # Evaluate every N epochs
+  save_interval: 20     # Save checkpoint every N epochs
+  log_interval: 1       # Log metrics every N epochs
+  grad_clip: 1.0        # Gradient clipping threshold (prevents exploding gradients)
+  early_stopping:
+    enabled: true
+    patience: 30        # Stop if no improvement for 30 evals
+    min_delta: 0.001    # Minimum improvement threshold
+
+optimizer:
+  name: "AdamW"
+  weight_decay: 1.0e-4  # L2 regularization
+
+scheduler:
+  name: "CosineAnnealingLR"
+  warmup_epochs: 10     # Warm-up phase to stabilize early training
+  min_lr: 1.0e-6        # Minimum learning rate
+
+data:
+  batch_size: 256
+  num_workers: 4
+  val_split: 0.1
+  augmentation: true
+
+logging:
+  use_tensorboard: true
+  log_dir: "logs"
+  metrics:
+    - "loss/train"
+    - "loss/val"
+    - "reward/mean"
+    - "reward/std"
+    - "success_rate"
+    - "lr"
